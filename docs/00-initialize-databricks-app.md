@@ -11,9 +11,7 @@ operational database (prediction log, feedback, app state). Source lives in `cod
 ## Prompt (Variant A — let Genie Code plan it)
 
 ```text
-Warm up the app infrastructure by scaffolding a minimal Streamlit Databricks App named opensky-flights. For now, include only a title and a “Provisioning” message—no additional UI.
-
-Create and deploy the app immediately so its compute can begin provisioning. Do not build the prediction interface or configure the Lakebase integration yet; those will be added in the next step. The only goal of this step is to deploy the starter app and warm up its endpoint.
+Create and immediately deploy a minimal Streamlit Databricks App named opensky-flights to begin provisioning its compute. Include only a title and a “Provisioning” message. Do not add the prediction interface or Lakebase integration yet.
 ```
 
 ## CLI (what the prompt runs)
