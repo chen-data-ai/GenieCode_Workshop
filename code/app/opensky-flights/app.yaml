@@ -1,0 +1,12 @@
+command: ["streamlit", "run", "app.py"]
+env:
+  # Serving endpoint name is injected from the attached serving_endpoint resource.
+  - name: SERVING_ENDPOINT
+    valueFrom: serving-endpoint
+  # Lakebase schema the app owns for its operational tables.
+  - name: APP_SCHEMA
+    value: app
+  # Lakebase auth is a short-lived OAuth token minted from this endpoint path (not a static
+  # password). PGHOST/PGDATABASE/PGUSER/PGPORT are auto-injected by the attached Lakebase resource.
+  - name: LAKEBASE_ENDPOINT
+    value: projects/opensky-online-store/branches/production/endpoints/primary

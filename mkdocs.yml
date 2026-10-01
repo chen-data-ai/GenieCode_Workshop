@@ -1,0 +1,53 @@
+site_name: OpenSky Avionics on Databricks
+site_description: >-
+  A hands-on tutorial — Databricks Marketplace, Genie Agents, Spark Declarative
+  Pipelines, Lakeflow Jobs, and Databricks Apps on the OpenSky full-day avionics dataset.
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.top
+    - navigation.footer   # Prev/Next buttons in the footer
+    - content.code.copy   # copy button on every code block
+
+plugins:
+  - search
+  - callouts   # convert GitHub-style > [!NOTE] alerts into Material admonitions
+  - macros:    # render {{ catalog }}.{{ schema }}.{{ table }} / {{ name }} from config.yml
+      include_yaml:
+        - config.yml
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+# Page order lives here — reorder the tutorial by moving these lines.
+nav:
+  - Home: index.md
+  - 1. Databricks Marketplace: 10-marketplace.md
+  - 2. Genie Agents — find data anomalies: 20-genie-eda.md
+  - 3. Genie Agents — explore & visualize: 30-genie-explore.md
+  - 4. Spark Declarative Pipeline (Genie Code): 40-pipeline.md
+  - 5. Lakeflow Job (Genie Code): 50-job.md
+  - 6. Databricks Asset Bundles (DABs): 60-dabs.md
+  - 7. ML Models: 70-ml-models.md
+  - 8. AI/BI Dashboards and Genie Agents: 80-dashboards.md
+  - Initialize the Databricks App (warm-up): 00-initialize-databricks-app.md
+  - 9. Databricks Apps + ML + Lakebase: 90-lakebase-apps.md
+  - Bonus — Databricks Apps gallery (Flight DNA): 90-apps.md
+  - 10. Open Sharing — receive locally: 100-opensharing.md
+  - 11. Wrap-up: 110-wrap-up.md

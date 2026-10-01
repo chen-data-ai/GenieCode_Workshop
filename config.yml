@@ -1,0 +1,11 @@
+# Personalize this workshop
+# ---------------------------
+# These values flow into every tutorial page via mkdocs-macros.
+# Change them to match the catalog / schema / table you created in Step 1,
+# then rebuild the docs (`mkdocs serve` or `mkdocs build`) — every page,
+# SQL snippet, and Genie prompt updates to your names automatically.
+#
+# Default dataset: marketplace.opensky.state_vectors
+catalog: marketplace
+schema: opensky
+table: state_vectors

@@ -1,0 +1,125 @@
+# 10. How do I receive shared data locally with open sharing?
+
+## What you'll do
+
+Everything so far ran inside Databricks, but often it is required to share data from Databricks to other systems. 
+
+Now you go the other way: **receive** the shared OpenSky
+data on your own local machine with the **open-source Delta Sharing client**: no Databricks runtime,
+and (because you simply use pandas) **no Spark and no Java**. That's the point of open sharing: the
+same data reads into any client, anywhere.
+
+This module stays entirely open source, so the code below is given to you to copy, paste and run rather than generated with AI tools. Genie Code is actually very good at writing client code like this: if you ever need to produce your own, it is the recommended way. Here the code is handed to you so the focus stays on VSCode, PySpark and the open Delta Sharing client.
+
+## Step-by-step guide
+
+> **Step 1: Install uv (one time)**
+>
+> This command is for macOS with [Homebrew](https://brew.sh); on another OS the equivalent differs slightly. You only need `uv` — it downloads Python 3.12 for you in the next step, so there's nothing else to install (no Java, no Spark, not even a system Python):
+>
+> ```bash
+> brew install uv   # fast Python package manager + virtual-environment tool
+> ```
+>
+> **Step 2: Create the Python environment in VSCode**
+>
+> Open the project folder in VSCode, then in the terminal create and activate an isolated
+> environment with `uv` (the `--python 3.12` flag makes uv fetch Python 3.12 if you don't already
+> have it) and install just two packages:
+>
+> ```bash
+> uv venv --python 3.12 --seed
+> source .venv/bin/activate
+> uv pip install "delta-sharing>=1.4" "pandas>=2.2"
+> ```
+>
+> Verify the install prints two version numbers:
+>
+> ```bash
+> python -c "import delta_sharing, pandas; print(delta_sharing.__version__, pandas.__version__)"
+> ```
+>
+> Then point VSCode at the new environment: open the Command Palette and run **Python: Select
+> Interpreter** → `.venv/bin/python`, so the editor, integrated terminal, and Run button all use it.
+>
+> **Step 3: Get your credential file**
+>
+> On the Databricks Marketplace listing, choose **Download credential file** and save the `.share`
+> profile next to your script as `opensky.share`. It's a small JSON with an `endpoint` and a
+> `bearerToken` which should be treated as a secret.
+
+> **Step 4: Write the receive script**
+>
+> Create a single `receive_opensky.py`. It lists what the share exposes, then asks a real
+> question over the data. You don't want the whole 696M-row day on the laptop, so you **push a
+> filter to the sharing server** with `jsonPredicateHints`: keep only low-altitude flights
+> (`baro_altitude < 3000` m), so only the matching files ever cross the network. The hint is
+> best-effort file-skipping, so you re-apply the same filter exactly in pandas:
+>
+> ```python
+> import json
+>
+> import delta_sharing
+>
+> # Personalize these to match your credential file (list_all_tables prints them):
+> PROFILE = "opensky.share"
+> SHARE, SCHEMA, TABLE_NAME = "opensky_marketplace", "opensky", "state_vectors"
+> TABLE = f"{PROFILE}#{SHARE}.{SCHEMA}.{TABLE_NAME}"
+>
+> client = delta_sharing.SharingClient(PROFILE)
+> for t in client.list_all_tables():          # what the share exposes
+>     print(f"{t.share}.{t.schema}.{t.name}")
+>
+> # Push a predicate down to the server so it skips non-matching files:
+> # baro_altitude < 3000. It's a file-skipping hint (may return a superset),
+> # so we re-apply the filter in pandas for an exact result.
+> low_altitude = {
+>     "op": "lessThan",
+>     "children": [
+>         {"op": "column", "name": "baro_altitude", "valueType": "double"},
+>         {"op": "literal", "value": "3000", "valueType": "double"},
+>     ],
+> }
+>
+> df = delta_sharing.load_as_pandas(TABLE, jsonPredicateHints=json.dumps(low_altitude), limit=1000)
+> df = df[df["baro_altitude"] < 3000]
+> print(df.shape)
+> print(df[["icao24", "callsign", "time_position", "latitude", "longitude", "baro_altitude"]].head())
+> ```
+>
+> **Step 5: Run it**
+>
+> ```bash
+> python receive_opensky.py
+> ```
+>
+> `list_all_tables()` prints the tables in the share; `load_as_pandas(url, jsonPredicateHints=...)`
+> pulls the matching rows into a pandas DataFrame you can analyze, plot, or export — all locally.
+> `jsonPredicateHints` lets the server skip files that can't match, so a fraction of the day crosses
+> the network instead of all 696M rows. Because the hint is best-effort file-skipping (it may return
+> a superset), you re-apply `df[df["baro_altitude"] < 3000]` in pandas for an exact result.
+
+## Results
+
+![receive_opensky.py open in VSCode with its integrated terminal showing the run output: the shared table name opensky_marketplace.opensky.state_vectors, a DataFrame shape of (394, 17), and the first low-altitude rows — aircraft a03a0b (callsign N1132W) at baro_altitude around 1,650–1,775 m near 39.9°N, -105.1°W.](assets/100-opensharing-vscode.png)
+
+## Open Sharing — Beyond the Basics
+
+A few things worth knowing once the basics work:
+
+- **[Schema-level sharing](https://docs.databricks.com/aws/en/delta-sharing/)** — a provider can share a whole schema so current and future tables appear automatically. Use it when you want new tables to show up without the provider re-issuing the share.
+- **[Incremental change reads](https://docs.databricks.com/aws/en/opensharing/read-data-open)** — `load_table_changes_as_pandas(...)` returns only the rows changed between table versions instead of a full snapshot (needs Change Data Feed on the shared table). Use it when repeatedly syncing a large shared table and you don't want to re-pull everything.
+- **Batched reads for small machines** — page a large result set instead of loading the whole table into memory at once. Use it when consuming a big shared table on a laptop or memory-limited environment.
+
+## Recap
+
+You received Databricks-shared data on a plain laptop without creating a cluster, no Spark, no Java and you answered a real question over it. In the code, the filter is pushed down to the sharing server, therefore only a fraction of the day's 696M rows crossed the network. 
+
+For large scans, change your architecture to Spark. Then swap `load_as_pandas` for
+`delta_sharing.load_as_spark(...)`
+
+### Tutorial navigation
+
+| ← Previous | Overview | Next → |
+|:---|:---:|---:|
+| [Bonus — Databricks Apps gallery (Flight DNA)](90-apps.md) | [Table of contents](index.md) | [11. Wrap-up & next steps](110-wrap-up.md) |
